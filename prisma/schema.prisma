@@ -1,0 +1,67 @@
+generator client { provider = "prisma-client-js" }
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LeadStatus { lead_found outreach_sent replied_interested call_booked proposal_sent paid building_website preview_ready approved delivered opted_out }
+enum Market { GH US }
+
+model Lead {
+  id           String     @id @default(cuid())
+  placeId      String     @unique
+  name         String
+  category     String?
+  address      String?
+  phone        String?
+  email        String?
+  websiteUri   String?
+  hasWebsite   Boolean
+  socialStatus String     @default("unknown") // none | found | unknown
+  market       Market     @default(GH)
+  city         String
+  status       LeadStatus @default(lead_found)
+  optedOut     Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  outreach     Outreach[]
+}
+
+model Outreach {
+  id        String    @id @default(cuid())
+  leadId    String
+  lead      Lead      @relation(fields: [leadId], references: [id])
+  subject   String
+  body      String
+  approved  Boolean   @default(false)
+  sentAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model Inquiry {
+  id        String   @id @default(cuid())
+  name      String
+  business  String
+  phone     String?
+  email     String?
+  interest  String   // website | social | both
+  country   String?  // US | GH | other
+  source    String   @default("form") // form | presence_check
+  message   String?
+  createdAt DateTime @default(now())
+}
+
+model Payment {
+  id        String    @id @default(cuid())
+  reference String    @unique
+  plan      String
+  currency  String    // GHS | USD
+  amount    Int       // first payment, minor units (pesewas / cents)
+  provider  String    // paystack | stripe
+  status    String    @default("pending") // pending | paid
+  name      String
+  business  String
+  email     String
+  phone     String?
+  createdAt DateTime  @default(now())
+  paidAt    DateTime?
+}
